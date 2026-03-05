@@ -1,0 +1,638 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Reporte de Operación de Equipos</title>
+<link href="https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@400;600&family=IBM+Plex+Sans:wght@300;400;600;700&display=swap" rel="stylesheet">
+<style>
+  :root {
+    --bg: #0f1117;
+    --surface: #1a1d27;
+    --surface2: #22263a;
+    --accent: #f5a623;
+    --accent2: #3b82f6;
+    --success: #10b981;
+    --error: #ef4444;
+    --text: #e8eaf0;
+    --text2: #8891aa;
+    --border: #2d3250;
+  }
+
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+
+  body {
+    background: var(--bg);
+    color: var(--text);
+    font-family: 'IBM Plex Sans', sans-serif;
+    min-height: 100vh;
+    display: flex;
+    flex-direction: column;
+  }
+
+  /* Grid background */
+  body::before {
+    content: '';
+    position: fixed;
+    inset: 0;
+    background-image:
+      linear-gradient(var(--border) 1px, transparent 1px),
+      linear-gradient(90deg, var(--border) 1px, transparent 1px);
+    background-size: 40px 40px;
+    opacity: 0.3;
+    pointer-events: none;
+    z-index: 0;
+  }
+
+  .container {
+    position: relative;
+    z-index: 1;
+    max-width: 680px;
+    margin: 0 auto;
+    padding: 48px 24px;
+    width: 100%;
+  }
+
+  /* Header */
+  .header {
+    margin-bottom: 48px;
+  }
+
+  .badge {
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+    background: rgba(245, 166, 35, 0.12);
+    border: 1px solid rgba(245, 166, 35, 0.3);
+    color: var(--accent);
+    font-family: 'IBM Plex Mono', monospace;
+    font-size: 11px;
+    font-weight: 600;
+    letter-spacing: 0.1em;
+    text-transform: uppercase;
+    padding: 6px 12px;
+    border-radius: 4px;
+    margin-bottom: 20px;
+  }
+
+  .badge::before {
+    content: '';
+    width: 6px;
+    height: 6px;
+    background: var(--accent);
+    border-radius: 50%;
+    animation: pulse 2s infinite;
+  }
+
+  @keyframes pulse {
+    0%, 100% { opacity: 1; }
+    50% { opacity: 0.3; }
+  }
+
+  h1 {
+    font-size: 32px;
+    font-weight: 700;
+    line-height: 1.2;
+    margin-bottom: 10px;
+    letter-spacing: -0.02em;
+  }
+
+  h1 span { color: var(--accent); }
+
+  .subtitle {
+    color: var(--text2);
+    font-size: 14px;
+    line-height: 1.6;
+  }
+
+  /* Stats bar */
+  .stats-bar {
+    display: flex;
+    gap: 1px;
+    background: var(--border);
+    border: 1px solid var(--border);
+    border-radius: 8px;
+    overflow: hidden;
+    margin-bottom: 32px;
+  }
+
+  .stat {
+    flex: 1;
+    background: var(--surface);
+    padding: 16px 20px;
+    text-align: center;
+  }
+
+  .stat-value {
+    font-family: 'IBM Plex Mono', monospace;
+    font-size: 28px;
+    font-weight: 600;
+    color: var(--accent);
+    line-height: 1;
+    margin-bottom: 4px;
+  }
+
+  .stat-label {
+    font-size: 11px;
+    color: var(--text2);
+    text-transform: uppercase;
+    letter-spacing: 0.08em;
+  }
+
+  /* Card */
+  .card {
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: 12px;
+    padding: 32px;
+    margin-bottom: 16px;
+  }
+
+  .card-title {
+    font-size: 12px;
+    font-weight: 600;
+    text-transform: uppercase;
+    letter-spacing: 0.1em;
+    color: var(--text2);
+    margin-bottom: 20px;
+    display: flex;
+    align-items: center;
+    gap: 8px;
+  }
+
+  .card-title::after {
+    content: '';
+    flex: 1;
+    height: 1px;
+    background: var(--border);
+  }
+
+  /* Input */
+  .input-group {
+    margin-bottom: 20px;
+  }
+
+  label {
+    display: block;
+    font-size: 12px;
+    font-weight: 600;
+    color: var(--text2);
+    text-transform: uppercase;
+    letter-spacing: 0.08em;
+    margin-bottom: 8px;
+  }
+
+  input[type="text"] {
+    width: 100%;
+    background: var(--surface2);
+    border: 1px solid var(--border);
+    border-radius: 8px;
+    padding: 12px 16px;
+    color: var(--text);
+    font-family: 'IBM Plex Sans', sans-serif;
+    font-size: 14px;
+    outline: none;
+    transition: border-color 0.2s;
+  }
+
+  input[type="text"]:focus {
+    border-color: var(--accent);
+  }
+
+  input[type="text"]::placeholder {
+    color: var(--text2);
+    opacity: 0.5;
+  }
+
+  /* Drop zone */
+  .dropzone {
+    border: 2px dashed var(--border);
+    border-radius: 10px;
+    padding: 48px 24px;
+    text-align: center;
+    cursor: pointer;
+    transition: all 0.25s;
+    position: relative;
+    background: var(--surface2);
+  }
+
+  .dropzone:hover, .dropzone.drag-over {
+    border-color: var(--accent);
+    background: rgba(245, 166, 35, 0.05);
+  }
+
+  .dropzone input[type="file"] {
+    position: absolute;
+    inset: 0;
+    opacity: 0;
+    cursor: pointer;
+    width: 100%;
+    height: 100%;
+  }
+
+  .drop-icon {
+    font-size: 40px;
+    margin-bottom: 12px;
+    display: block;
+  }
+
+  .drop-text {
+    font-size: 15px;
+    font-weight: 600;
+    color: var(--text);
+    margin-bottom: 6px;
+  }
+
+  .drop-hint {
+    font-size: 12px;
+    color: var(--text2);
+  }
+
+  /* Preview */
+  .preview-wrap {
+    display: none;
+    margin-top: 16px;
+    border-radius: 8px;
+    overflow: hidden;
+    border: 1px solid var(--border);
+    position: relative;
+  }
+
+  .preview-wrap img {
+    width: 100%;
+    max-height: 280px;
+    object-fit: contain;
+    background: #000;
+    display: block;
+  }
+
+  .preview-remove {
+    position: absolute;
+    top: 10px;
+    right: 10px;
+    background: rgba(0,0,0,0.7);
+    border: 1px solid var(--border);
+    color: var(--text);
+    border-radius: 6px;
+    padding: 4px 10px;
+    font-size: 12px;
+    cursor: pointer;
+    font-family: 'IBM Plex Sans', sans-serif;
+  }
+
+  /* Button */
+  .btn {
+    width: 100%;
+    padding: 16px;
+    border: none;
+    border-radius: 8px;
+    font-family: 'IBM Plex Sans', sans-serif;
+    font-size: 15px;
+    font-weight: 700;
+    cursor: pointer;
+    transition: all 0.2s;
+    letter-spacing: 0.03em;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 8px;
+  }
+
+  .btn-primary {
+    background: var(--accent);
+    color: #000;
+  }
+
+  .btn-primary:hover:not(:disabled) {
+    background: #ffc04d;
+    transform: translateY(-1px);
+  }
+
+  .btn-primary:disabled {
+    opacity: 0.5;
+    cursor: not-allowed;
+    transform: none;
+  }
+
+  .btn-secondary {
+    background: var(--surface2);
+    color: var(--text);
+    border: 1px solid var(--border);
+    font-weight: 600;
+  }
+
+  .btn-secondary:hover {
+    border-color: var(--accent2);
+    color: var(--accent2);
+  }
+
+  .downloads {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 10px;
+  }
+
+  /* Progress */
+  .progress-bar {
+    height: 3px;
+    background: var(--border);
+    border-radius: 2px;
+    overflow: hidden;
+    margin: 16px 0;
+    display: none;
+  }
+
+  .progress-fill {
+    height: 100%;
+    background: var(--accent);
+    border-radius: 2px;
+    width: 0%;
+    transition: width 0.3s;
+    animation: progress-anim 2s ease-in-out infinite;
+  }
+
+  @keyframes progress-anim {
+    0% { width: 5%; }
+    50% { width: 85%; }
+    100% { width: 95%; }
+  }
+
+  /* Result */
+  .result {
+    display: none;
+    border-radius: 10px;
+    padding: 20px;
+    margin-top: 20px;
+    border: 1px solid;
+  }
+
+  .result.success {
+    background: rgba(16, 185, 129, 0.08);
+    border-color: rgba(16, 185, 129, 0.3);
+  }
+
+  .result.error {
+    background: rgba(239, 68, 68, 0.08);
+    border-color: rgba(239, 68, 68, 0.3);
+  }
+
+  .result-title {
+    font-weight: 700;
+    font-size: 14px;
+    margin-bottom: 12px;
+    display: flex;
+    align-items: center;
+    gap: 8px;
+  }
+
+  .result.success .result-title { color: var(--success); }
+  .result.error .result-title { color: var(--error); }
+
+  .result-grid {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 6px;
+  }
+
+  .result-item {
+    background: rgba(0,0,0,0.2);
+    border-radius: 6px;
+    padding: 8px 10px;
+  }
+
+  .result-item-label {
+    font-size: 10px;
+    color: var(--text2);
+    text-transform: uppercase;
+    letter-spacing: 0.06em;
+    margin-bottom: 2px;
+    font-family: 'IBM Plex Mono', monospace;
+  }
+
+  .result-item-value {
+    font-size: 13px;
+    color: var(--text);
+    font-weight: 500;
+  }
+
+  .record-badge {
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+    background: rgba(16, 185, 129, 0.15);
+    border: 1px solid rgba(16, 185, 129, 0.3);
+    color: var(--success);
+    font-family: 'IBM Plex Mono', monospace;
+    font-size: 12px;
+    padding: 4px 10px;
+    border-radius: 4px;
+    margin-bottom: 14px;
+  }
+
+  /* Footer */
+  .footer {
+    text-align: center;
+    padding: 32px 24px;
+    color: var(--text2);
+    font-size: 12px;
+    font-family: 'IBM Plex Mono', monospace;
+    position: relative;
+    z-index: 1;
+    margin-top: auto;
+  }
+</style>
+</head>
+<body>
+<div class="container">
+
+  <div class="header">
+    <div class="badge">Sistema activo</div>
+    <h1>Reporte de <span>Operación</span><br>de Equipos</h1>
+    <p class="subtitle">Sube la foto del reporte físico. La IA extrae los datos<br>y los registra automáticamente en el Excel.</p>
+  </div>
+
+  <div class="stats-bar">
+    <div class="stat">
+      <div class="stat-value" id="stat-registros">—</div>
+      <div class="stat-label">Registros</div>
+    </div>
+    <div class="stat">
+      <div class="stat-value" id="stat-imagenes">—</div>
+      <div class="stat-label">Imágenes</div>
+    </div>
+  </div>
+
+  <!-- Upload card -->
+  <div class="card">
+    <div class="card-title">📤 Subir reporte</div>
+
+    <div class="input-group">
+      <label>Nombre del proveedor</label>
+      <input type="text" id="proveedor" placeholder="Ej: Transportes García S.A.">
+    </div>
+
+    <div class="dropzone" id="dropzone">
+      <input type="file" id="fileInput" accept="image/*,.jpg,.jpeg,.png,.webp">
+      <span class="drop-icon">📷</span>
+      <div class="drop-text">Arrastra la foto aquí o haz clic para seleccionar</div>
+      <div class="drop-hint">JPG, PNG, WEBP — máx. 16MB</div>
+    </div>
+
+    <div class="preview-wrap" id="previewWrap">
+      <img id="preview" src="" alt="Vista previa">
+      <button class="preview-remove" onclick="removeFile()">✕ Quitar</button>
+    </div>
+
+    <div class="progress-bar" id="progressBar">
+      <div class="progress-fill"></div>
+    </div>
+
+    <div class="result" id="result"></div>
+
+    <br>
+    <button class="btn btn-primary" id="submitBtn" onclick="upload()" disabled>
+      <span id="btnText">⬆ Subir y procesar</span>
+    </button>
+  </div>
+
+  <!-- Downloads card -->
+  <div class="card">
+    <div class="card-title">📥 Descargas</div>
+    <div class="downloads">
+      <a href="/download-excel" style="text-decoration:none;">
+        <button class="btn btn-secondary" style="width:100%">📊 Descargar Excel</button>
+      </a>
+      <a href="/download-zip" style="text-decoration:none;">
+        <button class="btn btn-secondary" style="width:100%">🗜 Descargar ZIP</button>
+      </a>
+    </div>
+  </div>
+
+</div>
+
+<div class="footer">Sistema de Registro de Reportes · v1.0</div>
+
+<script>
+  let selectedFile = null;
+
+  // Load stats
+  async function loadStats() {
+    try {
+      const r = await fetch('/stats');
+      const d = await r.json();
+      document.getElementById('stat-registros').textContent = d.registros;
+      document.getElementById('stat-imagenes').textContent = d.imagenes;
+    } catch(e) {}
+  }
+  loadStats();
+
+  // Drag & drop
+  const dz = document.getElementById('dropzone');
+  dz.addEventListener('dragover', e => { e.preventDefault(); dz.classList.add('drag-over'); });
+  dz.addEventListener('dragleave', () => dz.classList.remove('drag-over'));
+  dz.addEventListener('drop', e => {
+    e.preventDefault();
+    dz.classList.remove('drag-over');
+    const file = e.dataTransfer.files[0];
+    if (file) setFile(file);
+  });
+
+  document.getElementById('fileInput').addEventListener('change', e => {
+    if (e.target.files[0]) setFile(e.target.files[0]);
+  });
+
+  function setFile(file) {
+    selectedFile = file;
+    const reader = new FileReader();
+    reader.onload = e => {
+      document.getElementById('preview').src = e.target.result;
+      document.getElementById('previewWrap').style.display = 'block';
+    };
+    reader.readAsDataURL(file);
+    document.getElementById('submitBtn').disabled = false;
+    document.getElementById('result').style.display = 'none';
+  }
+
+  function removeFile() {
+    selectedFile = null;
+    document.getElementById('preview').src = '';
+    document.getElementById('previewWrap').style.display = 'none';
+    document.getElementById('fileInput').value = '';
+    document.getElementById('submitBtn').disabled = true;
+  }
+
+  async function upload() {
+    if (!selectedFile) return;
+
+    const proveedor = document.getElementById('proveedor').value || 'Sin nombre';
+    const btn = document.getElementById('submitBtn');
+    const btnText = document.getElementById('btnText');
+    const progressBar = document.getElementById('progressBar');
+    const result = document.getElementById('result');
+
+    btn.disabled = true;
+    btnText.textContent = '⏳ Procesando con IA...';
+    progressBar.style.display = 'block';
+    result.style.display = 'none';
+
+    const formData = new FormData();
+    formData.append('file', selectedFile);
+    formData.append('proveedor', proveedor);
+
+    try {
+      const response = await fetch('/upload', { method: 'POST', body: formData });
+      const data = await response.json();
+
+      progressBar.style.display = 'none';
+
+      if (data.success) {
+        // Show success with extracted data
+        const keyFields = [
+          ['FECHA DE TRABAJO DIARIO', 'Fecha'],
+          ['PROVEEDOR', 'Proveedor'],
+          ['CAMPAMENTO', 'Campamento'],
+          ['TIPO DE MAQUINARIA', 'Maquinaria'],
+          ['TOTAL HORAS', 'Total Horas'],
+          ['HOROMETRO INICIAL', 'Horómetro I'],
+          ['HOROMETRO FINAL', 'Horómetro F'],
+          ['OBSERVACIONES', 'Observaciones'],
+        ];
+        let itemsHtml = keyFields
+          .filter(([k]) => data.data[k])
+          .map(([k, label]) => `
+            <div class="result-item">
+              <div class="result-item-label">${label}</div>
+              <div class="result-item-value">${data.data[k] ?? '—'}</div>
+            </div>`)
+          .join('');
+
+        result.className = 'result success';
+        result.innerHTML = `
+          <div class="result-title">✅ Reporte registrado correctamente</div>
+          <div class="record-badge">📋 Registro #${data.record}</div>
+          <div class="result-grid">${itemsHtml || '<p style="color:var(--text2);font-size:13px">Datos extraídos y guardados en el Excel.</p>'}</div>
+        `;
+        result.style.display = 'block';
+
+        removeFile();
+        document.getElementById('proveedor').value = '';
+        loadStats();
+      } else {
+        result.className = 'result error';
+        result.innerHTML = `<div class="result-title">❌ Error</div><p style="font-size:13px;color:var(--text2)">${data.error}</p>`;
+        result.style.display = 'block';
+        btn.disabled = false;
+      }
+    } catch(e) {
+      progressBar.style.display = 'none';
+      result.className = 'result error';
+      result.innerHTML = `<div class="result-title">❌ Error de conexión</div><p style="font-size:13px;color:var(--text2)">No se pudo conectar al servidor.</p>`;
+      result.style.display = 'block';
+      btn.disabled = false;
+    }
+
+    btnText.textContent = '⬆ Subir y procesar';
+  }
+</script>
+</body>
+</html>

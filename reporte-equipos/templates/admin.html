@@ -1,0 +1,492 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Panel Validador — Reportes de Equipos</title>
+<link href="https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@400;600&family=IBM+Plex+Sans:wght@300;400;600;700&display=swap" rel="stylesheet">
+<style>
+  :root {
+    --bg: #0f1117;
+    --surface: #1a1d27;
+    --surface2: #22263a;
+    --accent: #3b82f6;
+    --accent2: #f5a623;
+    --success: #10b981;
+    --error: #ef4444;
+    --text: #e8eaf0;
+    --text2: #8891aa;
+    --border: #2d3250;
+  }
+
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+
+  body {
+    background: var(--bg);
+    color: var(--text);
+    font-family: 'IBM Plex Sans', sans-serif;
+    min-height: 100vh;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+  }
+
+  body::before {
+    content: '';
+    position: fixed;
+    inset: 0;
+    background-image:
+      linear-gradient(var(--border) 1px, transparent 1px),
+      linear-gradient(90deg, var(--border) 1px, transparent 1px);
+    background-size: 40px 40px;
+    opacity: 0.25;
+    pointer-events: none;
+  }
+
+  .wrapper {
+    position: relative;
+    z-index: 1;
+    width: 100%;
+    max-width: 460px;
+    padding: 24px;
+  }
+
+  /* ── LOGIN SCREEN ── */
+  #loginScreen {
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: 16px;
+    padding: 40px 36px;
+    text-align: center;
+  }
+
+  .lock-icon {
+    font-size: 48px;
+    margin-bottom: 20px;
+    display: block;
+  }
+
+  .login-title {
+    font-size: 22px;
+    font-weight: 700;
+    margin-bottom: 8px;
+    letter-spacing: -0.02em;
+  }
+
+  .login-subtitle {
+    font-size: 13px;
+    color: var(--text2);
+    margin-bottom: 32px;
+  }
+
+  .pin-inputs {
+    display: flex;
+    gap: 10px;
+    justify-content: center;
+    margin-bottom: 24px;
+  }
+
+  .pin-digit {
+    width: 56px;
+    height: 64px;
+    background: var(--surface2);
+    border: 2px solid var(--border);
+    border-radius: 10px;
+    text-align: center;
+    font-family: 'IBM Plex Mono', monospace;
+    font-size: 28px;
+    font-weight: 600;
+    color: var(--text);
+    outline: none;
+    transition: border-color 0.2s;
+    caret-color: var(--accent);
+  }
+
+  .pin-digit:focus {
+    border-color: var(--accent);
+  }
+
+  .pin-digit.filled {
+    border-color: var(--accent);
+    background: rgba(59, 130, 246, 0.08);
+  }
+
+  .pin-digit.error {
+    border-color: var(--error);
+    background: rgba(239, 68, 68, 0.08);
+    animation: shake 0.3s ease;
+  }
+
+  @keyframes shake {
+    0%, 100% { transform: translateX(0); }
+    25% { transform: translateX(-6px); }
+    75% { transform: translateX(6px); }
+  }
+
+  .btn-login {
+    width: 100%;
+    padding: 14px;
+    background: var(--accent);
+    color: #fff;
+    border: none;
+    border-radius: 8px;
+    font-family: 'IBM Plex Sans', sans-serif;
+    font-size: 15px;
+    font-weight: 700;
+    cursor: pointer;
+    transition: all 0.2s;
+    letter-spacing: 0.03em;
+  }
+
+  .btn-login:hover:not(:disabled) {
+    background: #5b9af8;
+    transform: translateY(-1px);
+  }
+
+  .btn-login:disabled {
+    opacity: 0.5;
+    cursor: not-allowed;
+  }
+
+  .login-error {
+    color: var(--error);
+    font-size: 13px;
+    margin-top: 14px;
+    display: none;
+  }
+
+  /* ── ADMIN PANEL ── */
+  #adminPanel { display: none; }
+
+  .header {
+    margin-bottom: 32px;
+  }
+
+  .badge {
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+    background: rgba(59, 130, 246, 0.12);
+    border: 1px solid rgba(59, 130, 246, 0.3);
+    color: var(--accent);
+    font-family: 'IBM Plex Mono', monospace;
+    font-size: 11px;
+    font-weight: 600;
+    letter-spacing: 0.1em;
+    text-transform: uppercase;
+    padding: 6px 12px;
+    border-radius: 4px;
+    margin-bottom: 16px;
+  }
+
+  h1 {
+    font-size: 26px;
+    font-weight: 700;
+    letter-spacing: -0.02em;
+    margin-bottom: 6px;
+  }
+
+  h1 span { color: var(--accent); }
+
+  .subtitle {
+    font-size: 13px;
+    color: var(--text2);
+  }
+
+  .stats-bar {
+    display: flex;
+    gap: 1px;
+    background: var(--border);
+    border: 1px solid var(--border);
+    border-radius: 10px;
+    overflow: hidden;
+    margin-bottom: 24px;
+  }
+
+  .stat {
+    flex: 1;
+    background: var(--surface);
+    padding: 16px;
+    text-align: center;
+  }
+
+  .stat-value {
+    font-family: 'IBM Plex Mono', monospace;
+    font-size: 26px;
+    font-weight: 600;
+    color: var(--accent2);
+    line-height: 1;
+    margin-bottom: 4px;
+  }
+
+  .stat-label {
+    font-size: 11px;
+    color: var(--text2);
+    text-transform: uppercase;
+    letter-spacing: 0.08em;
+  }
+
+  .card {
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: 12px;
+    padding: 28px;
+    margin-bottom: 14px;
+  }
+
+  .card-title {
+    font-size: 11px;
+    font-weight: 600;
+    text-transform: uppercase;
+    letter-spacing: 0.1em;
+    color: var(--text2);
+    margin-bottom: 18px;
+    display: flex;
+    align-items: center;
+    gap: 8px;
+  }
+
+  .card-title::after {
+    content: '';
+    flex: 1;
+    height: 1px;
+    background: var(--border);
+  }
+
+  .download-btn {
+    display: flex;
+    align-items: center;
+    gap: 14px;
+    width: 100%;
+    padding: 16px 18px;
+    background: var(--surface2);
+    border: 1px solid var(--border);
+    border-radius: 10px;
+    color: var(--text);
+    font-family: 'IBM Plex Sans', sans-serif;
+    font-size: 14px;
+    font-weight: 600;
+    cursor: pointer;
+    transition: all 0.2s;
+    text-decoration: none;
+    margin-bottom: 10px;
+  }
+
+  .download-btn:last-child { margin-bottom: 0; }
+
+  .download-btn:hover {
+    border-color: var(--accent);
+    color: var(--accent);
+    transform: translateX(4px);
+  }
+
+  .download-btn .icon {
+    font-size: 24px;
+    width: 36px;
+    text-align: center;
+  }
+
+  .download-btn .info { text-align: left; flex: 1; }
+
+  .download-btn .info small {
+    display: block;
+    font-size: 11px;
+    color: var(--text2);
+    font-weight: 400;
+    margin-top: 2px;
+  }
+
+  .download-btn .arrow {
+    color: var(--text2);
+    font-size: 18px;
+    transition: transform 0.2s;
+  }
+
+  .download-btn:hover .arrow {
+    transform: translateX(4px);
+    color: var(--accent);
+  }
+
+  .logout-btn {
+    width: 100%;
+    padding: 12px;
+    background: transparent;
+    border: 1px solid var(--border);
+    border-radius: 8px;
+    color: var(--text2);
+    font-family: 'IBM Plex Sans', sans-serif;
+    font-size: 13px;
+    cursor: pointer;
+    transition: all 0.2s;
+    margin-top: 8px;
+  }
+
+  .logout-btn:hover {
+    border-color: var(--error);
+    color: var(--error);
+  }
+</style>
+</head>
+<body>
+<div class="wrapper">
+
+  <!-- LOGIN -->
+  <div id="loginScreen">
+    <span class="lock-icon">🔐</span>
+    <div class="login-title">Panel del Validador</div>
+    <p class="login-subtitle">Ingresa el PIN para acceder a las descargas</p>
+
+    <div class="pin-inputs">
+      <input class="pin-digit" type="password" maxlength="1" inputmode="numeric" id="p0">
+      <input class="pin-digit" type="password" maxlength="1" inputmode="numeric" id="p1">
+      <input class="pin-digit" type="password" maxlength="1" inputmode="numeric" id="p2">
+      <input class="pin-digit" type="password" maxlength="1" inputmode="numeric" id="p3">
+    </div>
+
+    <button class="btn-login" id="loginBtn" onclick="verifyPin()" disabled>Ingresar</button>
+    <div class="login-error" id="loginError">PIN incorrecto. Inténtalo de nuevo.</div>
+  </div>
+
+  <!-- ADMIN PANEL -->
+  <div id="adminPanel">
+    <div class="header">
+      <div class="badge">🛡 Acceso validador</div>
+      <h1>Panel de <span>Descargas</span></h1>
+      <p class="subtitle">Descarga el Excel acumulativo o el ZIP con todas las imágenes.</p>
+    </div>
+
+    <div class="stats-bar">
+      <div class="stat">
+        <div class="stat-value" id="stat-registros">—</div>
+        <div class="stat-label">Registros</div>
+      </div>
+      <div class="stat">
+        <div class="stat-value" id="stat-imagenes">—</div>
+        <div class="stat-label">Imágenes</div>
+      </div>
+    </div>
+
+    <div class="card">
+      <div class="card-title">📥 Archivos disponibles</div>
+
+      <button class="download-btn" onclick="download('excel')">
+        <span class="icon">📊</span>
+        <div class="info">
+          Reporte_Operacion_Equipos.xlsx
+          <small>Excel con todos los registros acumulados</small>
+        </div>
+        <span class="arrow">→</span>
+      </button>
+
+      <button class="download-btn" onclick="download('zip')">
+        <span class="icon">🗜</span>
+        <div class="info">
+          imagenes_reportes.zip
+          <small>ZIP con todas las fotos recibidas</small>
+        </div>
+        <span class="arrow">→</span>
+      </button>
+    </div>
+
+    <button class="logout-btn" onclick="logout()">Cerrar sesión</button>
+  </div>
+
+</div>
+
+<script>
+  let sessionPin = null;
+
+  // PIN input auto-advance
+  const digits = ['p0','p1','p2','p3'];
+  digits.forEach((id, i) => {
+    const el = document.getElementById(id);
+    el.addEventListener('input', () => {
+      el.classList.toggle('filled', el.value !== '');
+      if (el.value && i < 3) document.getElementById(digits[i+1]).focus();
+      checkPin();
+    });
+    el.addEventListener('keydown', e => {
+      if (e.key === 'Backspace' && !el.value && i > 0) {
+        document.getElementById(digits[i-1]).focus();
+      }
+      if (e.key === 'Enter') verifyPin();
+    });
+  });
+
+  function getPin() {
+    return digits.map(id => document.getElementById(id).value).join('');
+  }
+
+  function checkPin() {
+    document.getElementById('loginBtn').disabled = getPin().length < 4;
+  }
+
+  async function verifyPin() {
+    const pin = getPin();
+    if (pin.length < 4) return;
+
+    try {
+      const r = await fetch('/admin/verify', {
+        method: 'POST',
+        headers: {'Content-Type': 'application/json'},
+        body: JSON.stringify({pin})
+      });
+      const d = await r.json();
+
+      if (d.success) {
+        sessionPin = pin;
+        document.getElementById('loginScreen').style.display = 'none';
+        document.getElementById('adminPanel').style.display = 'block';
+        loadStats();
+      } else {
+        digits.forEach(id => document.getElementById(id).classList.add('error'));
+        document.getElementById('loginError').style.display = 'block';
+        setTimeout(() => {
+          digits.forEach(id => {
+            const el = document.getElementById(id);
+            el.classList.remove('error', 'filled');
+            el.value = '';
+          });
+          document.getElementById('loginError').style.display = 'none';
+          document.getElementById('loginBtn').disabled = true;
+          document.getElementById('p0').focus();
+        }, 1000);
+      }
+    } catch(e) {
+      console.error(e);
+    }
+  }
+
+  async function loadStats() {
+    try {
+      const r = await fetch('/stats');
+      const d = await r.json();
+      document.getElementById('stat-registros').textContent = d.registros;
+      document.getElementById('stat-imagenes').textContent = d.imagenes;
+    } catch(e) {}
+  }
+
+  function download(type) {
+    const url = type === 'excel'
+      ? `/download-excel?pin=${sessionPin}`
+      : `/download-zip?pin=${sessionPin}`;
+    window.location.href = url;
+  }
+
+  function logout() {
+    sessionPin = null;
+    document.getElementById('adminPanel').style.display = 'none';
+    document.getElementById('loginScreen').style.display = 'block';
+    digits.forEach(id => {
+      const el = document.getElementById(id);
+      el.value = '';
+      el.classList.remove('filled');
+    });
+    document.getElementById('loginBtn').disabled = true;
+  }
+
+  // Focus first digit on load
+  document.getElementById('p0').focus();
+</script>
+</body>
+</html>

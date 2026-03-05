@@ -561,6 +561,77 @@
     document.getElementById('submitBtn').disabled = true;
   }
 
+  function showResult(data) {
+    const result = document.getElementById('result');
+    const keyFields = [
+      ['FECHA DE TRABAJO DIARIO', 'Fecha'],
+      ['PROVEEDOR', 'Proveedor'],
+      ['CAMPAMENTO', 'Campamento'],
+      ['TIPO DE MAQUINARIA', 'Maquinaria'],
+      ['TOTAL HORAS', 'Total Horas'],
+      ['HOROMETRO INICIAL', 'Horómetro I'],
+      ['HOROMETRO FINAL', 'Horómetro F'],
+      ['OBSERVACIONES', 'Observaciones'],
+    ];
+    let itemsHtml = keyFields
+      .filter(([k]) => data.data[k])
+      .map(([k, label]) => `
+        <div class="result-item">
+          <div class="result-item-label">${label}</div>
+          <div class="result-item-value">${data.data[k] ?? '—'}</div>
+        </div>`).join('');
+
+    result.className = 'result success';
+    result.innerHTML = `
+      <div class="result-title">✅ Reporte registrado correctamente</div>
+      <div class="record-badge">📋 Registro #${data.record}</div>
+      <div class="result-grid">${itemsHtml || '<p style="color:var(--text2);font-size:13px">Datos guardados en el Excel.</p>'}</div>
+    `;
+    result.style.display = 'block';
+  }
+
+  async function pollStatus(jobId) {
+    const result = document.getElementById('result');
+    const progressBar = document.getElementById('progressBar');
+    const btn = document.getElementById('submitBtn');
+    const btnText = document.getElementById('btnText');
+
+    for (let i = 0; i < 60; i++) {  // max 2 min
+      await new Promise(r => setTimeout(r, 2000));
+      try {
+        const r = await fetch(`/status/${jobId}`);
+        const d = await r.json();
+
+        if (d.status === 'done') {
+          progressBar.style.display = 'none';
+          btnText.textContent = '⬆ Subir y procesar';
+          showResult(d);
+          removeFile();
+          document.getElementById('proveedor').value = '';
+          loadStats();
+          return;
+        } else if (d.status === 'error') {
+          progressBar.style.display = 'none';
+          btnText.textContent = '⬆ Subir y procesar';
+          result.className = 'result error';
+          result.innerHTML = `<div class="result-title">❌ Error</div><p style="font-size:13px;color:var(--text2)">${d.error}</p>`;
+          result.style.display = 'block';
+          btn.disabled = false;
+          return;
+        }
+        // still processing — keep polling
+      } catch(e) { /* ignore network blips */ }
+    }
+
+    // Timeout
+    progressBar.style.display = 'none';
+    btnText.textContent = '⬆ Subir y procesar';
+    result.className = 'result error';
+    result.innerHTML = `<div class="result-title">❌ Tiempo agotado</div><p style="font-size:13px;color:var(--text2)">La IA tardó demasiado. Intenta de nuevo.</p>`;
+    result.style.display = 'block';
+    btn.disabled = false;
+  }
+
   async function upload() {
     if (!selectedFile) return;
 
@@ -571,7 +642,7 @@
     const result = document.getElementById('result');
 
     btn.disabled = true;
-    btnText.textContent = '⏳ Procesando con IA...';
+    btnText.textContent = '⏳ Subiendo imagen...';
     progressBar.style.display = 'block';
     result.style.display = 'none';
 
@@ -583,45 +654,16 @@
       const response = await fetch('/upload', { method: 'POST', body: formData });
       const data = await response.json();
 
-      progressBar.style.display = 'none';
-
-      if (data.success) {
-        // Show success with extracted data
-        const keyFields = [
-          ['FECHA DE TRABAJO DIARIO', 'Fecha'],
-          ['PROVEEDOR', 'Proveedor'],
-          ['CAMPAMENTO', 'Campamento'],
-          ['TIPO DE MAQUINARIA', 'Maquinaria'],
-          ['TOTAL HORAS', 'Total Horas'],
-          ['HOROMETRO INICIAL', 'Horómetro I'],
-          ['HOROMETRO FINAL', 'Horómetro F'],
-          ['OBSERVACIONES', 'Observaciones'],
-        ];
-        let itemsHtml = keyFields
-          .filter(([k]) => data.data[k])
-          .map(([k, label]) => `
-            <div class="result-item">
-              <div class="result-item-label">${label}</div>
-              <div class="result-item-value">${data.data[k] ?? '—'}</div>
-            </div>`)
-          .join('');
-
-        result.className = 'result success';
-        result.innerHTML = `
-          <div class="result-title">✅ Reporte registrado correctamente</div>
-          <div class="record-badge">📋 Registro #${data.record}</div>
-          <div class="result-grid">${itemsHtml || '<p style="color:var(--text2);font-size:13px">Datos extraídos y guardados en el Excel.</p>'}</div>
-        `;
-        result.style.display = 'block';
-
-        removeFile();
-        document.getElementById('proveedor').value = '';
-        loadStats();
+      if (data.job_id) {
+        btnText.textContent = '⏳ IA procesando...';
+        pollStatus(data.job_id);  // non-blocking poll
       } else {
+        progressBar.style.display = 'none';
         result.className = 'result error';
-        result.innerHTML = `<div class="result-title">❌ Error</div><p style="font-size:13px;color:var(--text2)">${data.error}</p>`;
+        result.innerHTML = `<div class="result-title">❌ Error</div><p style="font-size:13px;color:var(--text2)">${data.error || 'Error desconocido'}</p>`;
         result.style.display = 'block';
         btn.disabled = false;
+        btnText.textContent = '⬆ Subir y procesar';
       }
     } catch(e) {
       progressBar.style.display = 'none';
@@ -629,9 +671,8 @@
       result.innerHTML = `<div class="result-title">❌ Error de conexión</div><p style="font-size:13px;color:var(--text2)">No se pudo conectar al servidor.</p>`;
       result.style.display = 'block';
       btn.disabled = false;
+      btnText.textContent = '⬆ Subir y procesar';
     }
-
-    btnText.textContent = '⬆ Subir y procesar';
   }
 </script>
 </body>

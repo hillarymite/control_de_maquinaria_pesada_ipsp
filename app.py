@@ -4,6 +4,8 @@ import base64
 import requests
 import smtplib
 import zipfile
+import threading
+import uuid
 from email.mime.multipart import MIMEMultipart
 from email.mime.base import MIMEBase
 from email.mime.text import MIMEText
@@ -14,16 +16,19 @@ from openpyxl.styles import Font, PatternFill, Alignment, Border, Side
 from datetime import datetime
 
 app = Flask(__name__)
-app.config['MAX_CONTENT_LENGTH'] = 16 * 1024 * 1024  # 16MB max
+app.config['MAX_CONTENT_LENGTH'] = 16 * 1024 * 1024
 
 UPLOAD_FOLDER = 'uploads'
 EXCEL_FILE = 'outputs/Reporte_Operacion_Equipos.xlsx'
 
-GROQ_API_KEY      = os.environ.get('GROQ_API_KEY', '')
-SMTP_EMAIL        = os.environ.get('SMTP_EMAIL', '')
-SMTP_PASSWORD     = os.environ.get('SMTP_PASSWORD', '')
-VALIDATOR_EMAIL   = os.environ.get('VALIDATOR_EMAIL', '')
-ADMIN_PIN         = os.environ.get('ADMIN_PIN', '1234')  # Cambia esto en Render
+GROQ_API_KEY    = os.environ.get('GROQ_API_KEY', '')
+SMTP_EMAIL      = os.environ.get('SMTP_EMAIL', '')
+SMTP_PASSWORD   = os.environ.get('SMTP_PASSWORD', '')
+VALIDATOR_EMAIL = os.environ.get('VALIDATOR_EMAIL', '')
+ADMIN_PIN       = os.environ.get('ADMIN_PIN', '1234')
+
+# In-memory job store
+jobs = {}
 
 COLUMNS = [
     "MEGAZONA", "CAMPAMENTO", "SECTOR", "PISCINA", "HECTÁREAS",
@@ -64,58 +69,32 @@ def extract_with_groq(image_base64, mime_type):
 Devuelve ÚNICAMENTE un JSON válido con estos campos exactos (usa null si no puedes leer el valor):
 
 {
-  "MEGAZONA": null,
-  "CAMPAMENTO": null,
-  "SECTOR": null,
-  "PISCINA": null,
-  "HECTÁREAS": null,
-  "FECHA REAL DE INICIO": null,
-  "FECHA DE TRABAJO DIARIO": null,
-  "CATEGORÍA DE TRABAJO": null,
-  "DESCRIPCIÓN DEL TRABAJO": null,
-  "FECHA REAL DE FIN": null,
-  "TIPO DE MAQUINARIA": null,
-  "CÓDIGO DE MAQUINARIA": null,
-  "CLASE DE MAQUINARIA": null,
-  "PROVEEDOR": null,
-  "No. COMPROBANTE": null,
-  "RESPONSABLE DE REGISTRO": null,
-  "HOROMETRO INICIAL": null,
-  "HOROMETRO FINAL": null,
-  "MAÑANA hora inicio": null,
-  "MAÑANA hora fin": null,
-  "TARDE hora inicio": null,
-  "TARDE hora fin": null,
-  "NOCHE hora inicio": null,
-  "NOCHE hora fin": null,
-  "TOTAL HORAS": null,
-  "HORAS EXTRAS": null,
-  "CONSUMO DE DIESEL": null,
-  "% DE AVANCE": null,
-  "OBSERVACIONES": null
+  "MEGAZONA": null, "CAMPAMENTO": null, "SECTOR": null, "PISCINA": null, "HECTÁREAS": null,
+  "FECHA REAL DE INICIO": null, "FECHA DE TRABAJO DIARIO": null, "CATEGORÍA DE TRABAJO": null,
+  "DESCRIPCIÓN DEL TRABAJO": null, "FECHA REAL DE FIN": null, "TIPO DE MAQUINARIA": null,
+  "CÓDIGO DE MAQUINARIA": null, "CLASE DE MAQUINARIA": null, "PROVEEDOR": null,
+  "No. COMPROBANTE": null, "RESPONSABLE DE REGISTRO": null, "HOROMETRO INICIAL": null,
+  "HOROMETRO FINAL": null, "MAÑANA hora inicio": null, "MAÑANA hora fin": null,
+  "TARDE hora inicio": null, "TARDE hora fin": null, "NOCHE hora inicio": null,
+  "NOCHE hora fin": null, "TOTAL HORAS": null, "HORAS EXTRAS": null,
+  "CONSUMO DE DIESEL": null, "% DE AVANCE": null, "OBSERVACIONES": null
 }
 
 Responde SOLO con el JSON, sin texto adicional, sin markdown."""
 
-    headers = {
-        "Authorization": f"Bearer {GROQ_API_KEY}",
-        "Content-Type": "application/json"
-    }
+    headers = {"Authorization": f"Bearer {GROQ_API_KEY}", "Content-Type": "application/json"}
     payload = {
         "model": "meta-llama/llama-4-scout-17b-16e-instruct",
-        "messages": [{
-            "role": "user",
-            "content": [
-                {"type": "image_url", "image_url": {"url": f"data:{mime_type};base64,{image_base64}"}},
-                {"type": "text", "text": prompt}
-            ]
-        }],
+        "messages": [{"role": "user", "content": [
+            {"type": "image_url", "image_url": {"url": f"data:{mime_type};base64,{image_base64}"}},
+            {"type": "text", "text": prompt}
+        ]}],
         "max_tokens": 1000,
         "temperature": 0.1
     }
     response = requests.post(
         "https://api.groq.com/openai/v1/chat/completions",
-        headers=headers, json=payload, timeout=30
+        headers=headers, json=payload, timeout=120
     )
     if response.status_code != 200:
         raise Exception(f"Error Groq API: {response.text}")
@@ -152,16 +131,8 @@ def send_email_with_image(image_data, filename, proveedor_name):
         msg = MIMEMultipart()
         msg['From'] = SMTP_EMAIL
         msg['To'] = VALIDATOR_EMAIL
-        msg['Subject'] = f"📋 Nuevo Reporte de Equipo - {proveedor_name} - {datetime.now().strftime('%d/%m/%Y %H:%M')}"
-        body = f"""Se ha recibido un nuevo reporte de operación de equipo.
-
-Proveedor: {proveedor_name}
-Fecha y hora de recepción: {datetime.now().strftime('%d/%m/%Y %H:%M:%S')}
-Archivo: {filename}
-
-Los datos ya han sido extraídos y añadidos al Excel acumulativo.
-Puede descargar el Excel y el ZIP de imágenes desde la plataforma.
-"""
+        msg['Subject'] = f"Nuevo Reporte - {proveedor_name} - {datetime.now().strftime('%d/%m/%Y %H:%M')}"
+        body = f"Proveedor: {proveedor_name}\nFecha: {datetime.now().strftime('%d/%m/%Y %H:%M:%S')}\nArchivo: {filename}\n\nDatos extraídos y guardados en el Excel."
         msg.attach(MIMEText(body, 'plain'))
         part = MIMEBase('application', 'octet-stream')
         part.set_payload(image_data)
@@ -174,6 +145,17 @@ Puede descargar el Excel y el ZIP de imágenes desde la plataforma.
             server.sendmail(SMTP_EMAIL, VALIDATOR_EMAIL, msg.as_string())
     except Exception as e:
         print(f"Error enviando email: {e}")
+
+def process_job(job_id, image_base64, mime_type, image_data, filename, proveedor_name):
+    """Runs in background thread."""
+    try:
+        jobs[job_id]['status'] = 'processing'
+        extracted = extract_with_groq(image_base64, mime_type)
+        record_num = append_to_excel(extracted)
+        send_email_with_image(image_data, filename, proveedor_name)
+        jobs[job_id] = {'status': 'done', 'record': record_num, 'data': extracted}
+    except Exception as e:
+        jobs[job_id] = {'status': 'error', 'error': str(e)}
 
 @app.route('/')
 def index():
@@ -210,26 +192,28 @@ def upload():
     image_data = file.read()
     image_base64 = base64.b64encode(image_data).decode('utf-8')
 
-    # Save image
     os.makedirs(UPLOAD_FOLDER, exist_ok=True)
     timestamp = datetime.now().strftime('%Y%m%d_%H%M%S')
     safe_proveedor = "".join(c for c in proveedor_name if c.isalnum() or c in (' ', '-', '_')).strip()
     filename = f"{timestamp}_{safe_proveedor}.{ext}"
-    filepath = os.path.join(UPLOAD_FOLDER, filename)
-    with open(filepath, 'wb') as f:
+    with open(os.path.join(UPLOAD_FOLDER, filename), 'wb') as f:
         f.write(image_data)
 
-    try:
-        extracted = extract_with_groq(image_base64, mime_type)
-        record_num = append_to_excel(extracted)
-        send_email_with_image(image_data, filename, proveedor_name)
-        return jsonify({
-            'success': True,
-            'record': record_num,
-            'data': extracted
-        })
-    except Exception as e:
-        return jsonify({'error': str(e)}), 500
+    # Create job and process in background
+    job_id = str(uuid.uuid4())
+    jobs[job_id] = {'status': 'queued'}
+    t = threading.Thread(target=process_job, args=(job_id, image_base64, mime_type, image_data, filename, proveedor_name))
+    t.daemon = True
+    t.start()
+
+    return jsonify({'job_id': job_id})
+
+@app.route('/status/<job_id>')
+def status(job_id):
+    job = jobs.get(job_id)
+    if not job:
+        return jsonify({'status': 'not_found'}), 404
+    return jsonify(job)
 
 @app.route('/download-excel')
 def download_excel():
@@ -237,8 +221,7 @@ def download_excel():
     if pin != ADMIN_PIN:
         return jsonify({'error': 'No autorizado'}), 401
     init_excel()
-    return send_file(EXCEL_FILE, as_attachment=True,
-                     download_name='Reporte_Operacion_Equipos.xlsx')
+    return send_file(EXCEL_FILE, as_attachment=True, download_name='Reporte_Operacion_Equipos.xlsx')
 
 @app.route('/download-zip')
 def download_zip():
@@ -250,8 +233,7 @@ def download_zip():
     with zipfile.ZipFile(zip_path, 'w') as zf:
         for fname in os.listdir(UPLOAD_FOLDER):
             zf.write(os.path.join(UPLOAD_FOLDER, fname), fname)
-    return send_file(zip_path, as_attachment=True,
-                     download_name=f'imagenes_reportes_{datetime.now().strftime("%Y%m%d")}.zip')
+    return send_file(zip_path, as_attachment=True, download_name=f'imagenes_reportes_{datetime.now().strftime("%Y%m%d")}.zip')
 
 @app.route('/stats')
 def stats():

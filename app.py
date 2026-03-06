@@ -344,7 +344,7 @@ def extract_with_gemini(image_base64: str, mime_type: str) -> dict:
                 {"text": EXTRACT_PROMPT}
             ]
         }],
-        "generationConfig": {"temperature": 0.05, "maxOutputTokens": 2048}
+        "generationConfig": {"temperature": 0.05, "maxOutputTokens": 2048, "response_mime_type": "application/json"}
     }
     resp = requests.post(url, json=payload, timeout=120)
     if resp.status_code != 200:

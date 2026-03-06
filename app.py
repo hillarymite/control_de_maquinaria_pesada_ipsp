@@ -41,6 +41,7 @@ SHEET_NAME     = 'CONTROL MAP'
 FIRST_DATA_ROW = 7                        # fila donde empiezan los datos (1-indexed)
 
 GROQ_API_KEY    = os.environ.get('GROQ_API_KEY',    '')
+GEMINI_API_KEY  = os.environ.get('GEMINI_API_KEY',  '')
 SMTP_EMAIL      = os.environ.get('SMTP_EMAIL',      '')
 SMTP_PASSWORD   = os.environ.get('SMTP_PASSWORD',   '')
 VALIDATOR_EMAIL = os.environ.get('VALIDATOR_EMAIL', '')
@@ -333,7 +334,26 @@ def _parse_json_safe(text: str) -> dict:
         except json.JSONDecodeError:
             pass
     raise ValueError(f"No se pudo parsear JSON. Respuesta (primeros 300 chars): {text[:300]}")
+def extract_with_gemini(image_base64: str, mime_type: str) -> dict:
+    if not GEMINI_API_KEY:
+        raise RuntimeError("GEMINI_API_KEY no configurado.")
 
+    url = f"https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash-preview-04-17:generateContent?key={GEMINI_API_KEY}"
+    payload = {
+        "contents": [{
+            "parts": [
+                {"inline_data": {"mime_type": mime_type, "data": image_base64}},
+                {"text": EXTRACT_PROMPT}
+            ]
+        }],
+        "generationConfig": {"temperature": 0.05, "maxOutputTokens": 1200}
+    }
+    resp = requests.post(url, json=payload, timeout=120)
+    if resp.status_code != 200:
+        raise RuntimeError(f"Gemini HTTP {resp.status_code}: {resp.text[:300]}")
+    content = resp.json()["candidates"][0]["content"]["parts"][0]["text"]
+    log.info("Gemini respuesta (preview): %s", content[:300])
+    return _parse_json_safe(content)
 
 def extract_with_groq(image_base64: str, mime_type: str) -> dict:
     if not GROQ_API_KEY:
@@ -451,7 +471,12 @@ def _broadcast_stats():
 def process_job(job_id, image_base64, mime_type, image_data, filename, proveedor_name):
     try:
         jobs[job_id]['status'] = 'processing'
-        extracted  = extract_with_groq(image_base64, mime_type)
+        try:
+            log.info("Intentando Gemini 2.5 Flash...")
+            extracted = extract_with_gemini(image_base64, mime_type)
+        except Exception as e_gemini:
+            log.warning("Gemini falló (%s), usando Groq como fallback...", e_gemini)
+            extracted = extract_with_groq(image_base64, mime_type)
         record_num = append_to_excel(extracted)
         # Email en hilo aparte para no bloquear el resultado
         threading.Thread(

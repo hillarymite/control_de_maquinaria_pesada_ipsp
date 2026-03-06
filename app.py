@@ -8,7 +8,8 @@ Objetivos resueltos en esta versión:
   3. Plantilla Excel: usa copia.xlsx como base, hoja "CONTROL MAP",
      datos desde fila 7, bordes fieles al original.
 """
-
+from gevent import monkey
+monkey.patch_all()
 import os, re, json, base64, logging, requests, smtplib, ssl
 import zipfile, threading, uuid, time, shutil, queue
 from email.mime.multipart import MIMEMultipart

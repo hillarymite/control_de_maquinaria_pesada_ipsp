@@ -226,84 +226,82 @@ def append_to_excel(data: dict) -> int:
 #  Prompt de extracción (Prompt Engineering avanzado)
 #  Objetivo: deducción lógica + contexto Ecuador
 # ──────────────────────────────────────────────
-EXTRACT_PROMPT = r"""Eres un experto en digitalización de formularios físicos de maquinaria pesada para una empresa ecuatoriana de movimiento de tierras, excavación, nivelación y construcción.
+EXTRACT_PROMPT = r"""Eres un sistema experto en digitalización de formularios físicos de maquinaria pesada para una empresa ecuatoriana de movimiento de tierras.
 
-## CONTEXTO GEOGRÁFICO Y OPERATIVO
-- Empresa opera en Ecuador, principalmente en provincias del Guayas, Los Ríos, Manabí y Pichincha.
-- Ciudades frecuentes en los formularios: Guayaquil, Durán, Daule, Samborondón, Naranjito, Milagro, El Triunfo, Quevedo, Babahoyo, Vinces, Ventanas, Santo Domingo.
-- Tipos de maquinaria habituales: excavadora, retroexcavadora, bulldozer, motoniveladora, compactadora, vibrocompactador, volquete, cargadora frontal, minicargadora, grúa, generador.
-- Tipos de trabajo habituales: excavación, relleno, compactación, nivelación, lastrado, desbroce, carga y transporte, instalación de tubería, movimiento de tierras.
-- Proveedores son empresas o personas con RUC ecuatoriano (número de 13 dígitos).
+## TU ÚNICA TAREA
+Extraer datos del formulario físico en la imagen y devolver UN ÚNICO objeto JSON válido con exactamente 29 claves. Sin texto adicional, sin explicaciones, sin bloques markdown.
 
-## REGLAS DE CORRECCIÓN OCR (aplica deducción lógica)
-1. Si lees un nombre de ciudad que suena similar a una ciudad ecuatoriana real, corrígelo (ej. "Debian" → "Durán", "Daula" → "Daule", "Guayaquil" con tildes raras → "Guayaquil").
-2. Los horómetros son números enteros o decimales de 4-6 dígitos (ej. 1723, 4521.5).
-3. Las horas de trabajo son del formato HH:MM o descripciones como "8am", "12:00", "13:00".
-4. Las fechas están escritas en español ("3 de marzo" → "03/03/2025") o en formato dd/mm/aaaa.
-5. Si lees letras ambiguas en nombres propios, elige la opción que tenga más sentido como nombre real en español.
-6. El campo "% DE AVANCE" es un porcentaje entre 0 y 100.
-7. "CONSUMO DE DIESEL" es un número en galones o litros.
-8. "CLASE DE MAQUINARIA" suele ser "Propia" o "Alquilada".
+## REGLA DE ORO
+- Si un campo está claramente escrito → transcríbelo con corrección OCR aplicada
+- Si un campo está ilegible, tachado, vacío o ausente → usa null obligatoriamente
+- NUNCA inventes, supongas ni rellenes datos que no veas explícitamente en la imagen
 
-## MAPEO DE CAMPOS DEL FORMULARIO FÍSICO → CLAVES JSON
-El formulario físico usa etiquetas distintas a las claves JSON. Aplica este mapeo:
-| Etiqueta en el formulario | Clave JSON destino |
+## CORRECCIÓN OCR — CONTEXTO ECUADOR
+Empresa opera en: Guayas, Los Ríos, Manabí, Pichincha.
+Ciudades frecuentes: Guayaquil, Durán, Daule, Samborondón, Naranjito, Milagro, El Triunfo, Quevedo, Babahoyo, Vinces, Ventanas, Santo Domingo.
+
+Aplica estas correcciones automáticas:
+- Nombres de ciudad con errores tipográficos → corrige al nombre real (ej: "Debian"→"Durán", "Daula"→"Daule")
+- Letras ambiguas en nombres propios → elige la opción más coherente en español
+- Números con OCR confuso (0/O, 1/l, 5/S) → deduce por contexto del campo
+
+## FORMATOS DE SALIDA OBLIGATORIOS
+| Campo | Formato exacto |
 |---|---|
-| CAMPAMENTO | CAMPAMENTO |
-| FECHA / FECHA DE TRABAJO | FECHA DIARIO |
-| RUC (del encabezado) | No. COMPROBANTE |
-| OBRA / Descripción de obra | DESCRIPCIÓN DEL TRABAJO |
-| EQUIPO / Máquina | TIPO DE MAQUINARIA |
-| TIPO DE TRABAJO / Actividad | CATEGORÍA DE TRABAJO |
-| COMBUSTIBLE / DIESEL | CONSUMO DE DIESEL |
-| HORÓMETRO I / Inicial | HOROMETRO INICIAL |
-| HORÓMETRO F / Final | HOROMETRO FINAL |
-| MAÑANA DE → | MAÑANA hora inicio |
-| MAÑANA A → | MAÑANA hora fin |
-| TARDE DE → | TARDE hora inicio |
-| TARDE A → | TARDE hora fin |
-| NOCHE DE → | NOCHE hora inicio |
-| NOCHE A → | NOCHE hora fin |
-| TOTAL HORAS TRABAJADAS | TOTAL HORAS |
-| OBSERVACIONES | OBSERVACIONES |
-| No / Nº (número del reporte) | No. COMPROBANTE |
+| Fechas | DD/MM/AAAA (ej: 03/03/2025) |
+| Horas | HH:MM en 24h (ej: 08:00, 13:30) |
+| Horómetros | Número sin unidades (ej: 1723, 4521.5) |
+| % DE AVANCE | Solo el número, sin % (ej: 75) |
+| CONSUMO DE DIESEL | Solo el número, sin unidades (ej: 45) |
+| TOTAL HORAS / HORAS EXTRAS | Número decimal (ej: 8.5) |
+| CLASE DE MAQUINARIA | Exactamente "Propia" o "Alquilada" |
 
-## INSTRUCCIONES DE SALIDA
-Devuelve ÚNICAMENTE un bloque JSON válido con exactamente estas 29 claves.
-Usa null si el campo no es legible o no existe en el formulario.
-NO incluyas texto adicional, explicaciones ni bloques markdown.
+## MAPEO: ETIQUETA DEL FORMULARIO → CLAVE JSON
+El formulario físico usa etiquetas distintas. Aplica este mapeo exacto:
 
-{
-  "MEGAZONA": null,
-  "CAMPAMENTO": null,
-  "SECTOR": null,
-  "PISCINA": null,
-  "HECTÁREAS": null,
-  "FECHA REAL DE INICIO": null,
-  "FECHA DIARIO": null,
-  "CATEGORÍA DE TRABAJO": null,
-  "DESCRIPCIÓN DEL TRABAJO": null,
-  "FECHA REAL DE FIN": null,
-  "TIPO DE MAQUINARIA": null,
-  "CÓDIGO DE MAQUINARIA": null,
-  "CLASE DE MAQUINARIA": null,
-  "PROVEEDOR": null,
-  "No. COMPROBANTE": null,
-  "RESPONSABLE DE REGISTRO": null,
-  "HOROMETRO INICIAL": null,
-  "HOROMETRO FINAL": null,
-  "MAÑANA hora inicio": null,
-  "MAÑANA hora fin": null,
-  "TARDE hora inicio": null,
-  "TARDE hora fin": null,
-  "NOCHE hora inicio": null,
-  "NOCHE hora fin": null,
-  "TOTAL HORAS": null,
-  "HORAS EXTRAS": null,
-  "CONSUMO DE DIESEL": null,
-  "% DE AVANCE": null,
-  "OBSERVACIONES": null
-}"""
+| Lo que ves en el papel | Clave JSON |
+|---|---|
+| CAMPAMENTO / Campamento | CAMPAMENTO |
+| FECHA / FECHA DE TRABAJO / Fecha diario | FECHA DIARIO |
+| FECHA INICIO / Inicio real | FECHA REAL DE INICIO |
+| FECHA FIN / Fin real | FECHA REAL DE FIN |
+| OBRA / Descripción obra / Trabajo | DESCRIPCIÓN DEL TRABAJO |
+| TIPO DE TRABAJO / Actividad / Categoría | CATEGORÍA DE TRABAJO |
+| EQUIPO / Máquina / Tipo equipo | TIPO DE MAQUINARIA |
+| CÓDIGO / Código equipo / Placa | CÓDIGO DE MAQUINARIA |
+| CLASE / Propio/Alquilado | CLASE DE MAQUINARIA |
+| PROVEEDOR / Contratista / Empresa | PROVEEDOR |
+| RUC / No. / Nº / Comprobante | No. COMPROBANTE |
+| RESPONSABLE / Operador / Firma | RESPONSABLE DE REGISTRO |
+| HORÓMETRO I / Inicial / Horo ini | HOROMETRO INICIAL |
+| HORÓMETRO F / Final / Horo fin | HOROMETRO FINAL |
+| MAÑANA DE / Inicio mañana | MAÑANA hora inicio |
+| MAÑANA A / Fin mañana | MAÑANA hora fin |
+| TARDE DE / Inicio tarde | TARDE hora inicio |
+| TARDE A / Fin tarde | TARDE hora fin |
+| NOCHE DE / Inicio noche | NOCHE hora inicio |
+| NOCHE A / Fin noche | NOCHE hora fin |
+| TOTAL HORAS / Horas trabajadas | TOTAL HORAS |
+| HORAS EXTRAS / H. extras | HORAS EXTRAS |
+| DIESEL / COMBUSTIBLE / Galones | CONSUMO DE DIESEL |
+| AVANCE / % avance | % DE AVANCE |
+| OBSERVACIONES / Notas | OBSERVACIONES |
+| MEGAZONA / Zona | MEGAZONA |
+| SECTOR | SECTOR |
+| PISCINA | PISCINA |
+| HECTÁREAS / Has | HECTÁREAS |
+
+## MANEJO DE CASOS ESPECIALES
+- Si hay tachones con corrección encima → usa el valor corregido (el escrito encima)
+- Si hay varios valores para un mismo campo → usa el último o el más legible
+- Si el formulario tiene secciones de MAÑANA/TARDE/NOCHE y alguna no fue trabajada → null para esas horas
+- Si TOTAL HORAS no está escrito pero las horas de turno sí → NO calcules, pon null
+- Si hay un número de comprobante Y un RUC → usa el número de comprobante en No. COMPROBANTE
+
+## RESPUESTA
+Devuelve ÚNICAMENTE este JSON con los valores extraídos (reemplaza null con el valor real donde lo encuentres):
+
+{"MEGAZONA":null,"CAMPAMENTO":null,"SECTOR":null,"PISCINA":null,"HECTÁREAS":null,"FECHA REAL DE INICIO":null,"FECHA DIARIO":null,"CATEGORÍA DE TRABAJO":null,"DESCRIPCIÓN DEL TRABAJO":null,"FECHA REAL DE FIN":null,"TIPO DE MAQUINARIA":null,"CÓDIGO DE MAQUINARIA":null,"CLASE DE MAQUINARIA":null,"PROVEEDOR":null,"No. COMPROBANTE":null,"RESPONSABLE DE REGISTRO":null,"HOROMETRO INICIAL":null,"HOROMETRO FINAL":null,"MAÑANA hora inicio":null,"MAÑANA hora fin":null,"TARDE hora inicio":null,"TARDE hora fin":null,"NOCHE hora inicio":null,"NOCHE hora fin":null,"TOTAL HORAS":null,"HORAS EXTRAS":null,"CONSUMO DE DIESEL":null,"% DE AVANCE":null,"OBSERVACIONES":null}"""
 
 # Modelos en orden de preferencia (fallback automático)
 VISION_MODELS = [

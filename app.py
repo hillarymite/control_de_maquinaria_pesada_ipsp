@@ -159,6 +159,20 @@ def init_excel():
             wb.save(EXCEL_FILE)
 
 
+
+def _coerce_numeric(val):
+    """Convierte un valor a int/float si es posible; si no, lo retorna como texto."""
+    if val is None:
+        return None
+    if isinstance(val, (int, float)):
+        return val
+    s = str(val).strip().replace(',', '.')
+    try:
+        f = float(s)
+        return int(f) if f == int(f) else f
+    except (ValueError, OverflowError):
+        return val
+
 def append_to_excel(data: dict) -> int:
     """Añade una fila de datos al Excel y devuelve el número de registro (1-based)."""
     init_excel()
@@ -182,8 +196,15 @@ def append_to_excel(data: dict) -> int:
     data_font = Font(size=9, name="Calibri")
     data_align = Alignment(horizontal="center", vertical="center", wrap_text=False)
 
+    # Campos que deben guardarse como número real (no texto)
+    NUMERIC_FIELDS = {
+        "HOROMETRO INICIAL", "HOROMETRO FINAL", "TOTAL HORAS", "HORAS EXTRAS",
+        "CONSUMO DE DIESEL", "% DE AVANCE", "HECTÁREAS",
+    }
+
     for key, col_idx in COLUMN_MAP.items():
-        value = data.get(key)
+        raw   = data.get(key)
+        value = _coerce_numeric(raw) if key in NUMERIC_FIELDS else raw
         cell  = ws.cell(row=next_row, column=col_idx, value=value)
         cell.font      = data_font
         cell.alignment = data_align

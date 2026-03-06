@@ -3,498 +3,323 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>Reporte de Operación de Equipos</title>
-<link href="https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@400;600&family=IBM+Plex+Sans:wght@300;400;600;700&display=swap" rel="stylesheet">
+<title>Registro de Maquinaria — Santa Priscila</title>
+<link href="https://fonts.googleapis.com/css2?family=DM+Sans:wght@300;400;500;600;700&family=DM+Mono:wght@400;500&display=swap" rel="stylesheet">
 <style>
-  :root {
-    --bg: #0f1117;
-    --surface: #1a1d27;
-    --surface2: #22263a;
-    --accent: #f5a623;
-    --accent2: #3b82f6;
-    --success: #10b981;
-    --error: #ef4444;
-    --text: #e8eaf0;
-    --text2: #8891aa;
-    --border: #2d3250;
-  }
+*{box-sizing:border-box;margin:0;padding:0}
+:root{
+  --navy:#00204A;--navy2:#002f6c;--white:#fff;--bg:#f0f2f5;
+  --border:#d8dce4;--border2:#c2c8d4;
+  --text:#1a202c;--text2:#64748b;--text3:#94a3b8;
+  --green:#166534;--gbg:#f0fdf4;--gbd:#bbf7d0;
+  --red:#991b1b;--rbg:#fef2f2;--rbd:#fecaca;
+  --amber-bg:#fffbeb;
+}
+body{font-family:'DM Sans',sans-serif;background:var(--bg);color:var(--text);min-height:100vh;display:flex;flex-direction:column}
 
-  * { box-sizing: border-box; margin: 0; padding: 0; }
+/* Navbar */
+.nav{background:#fff;border-bottom:1px solid var(--border);padding:0 32px;height:60px;display:flex;align-items:center;justify-content:space-between;position:sticky;top:0;z-index:50;box-shadow:0 1px 3px rgba(0,0,0,.05)}
+.nav-l{display:flex;align-items:center;gap:20px}
+.brand{font-size:17px;font-weight:700;color:var(--navy);letter-spacing:.06em;font-variant:small-caps}
+.divider{width:1px;height:24px;background:var(--border)}
+.module{font-size:13px;color:var(--text2);font-weight:500}
+.status{display:flex;align-items:center;gap:7px;background:var(--gbg);border:1px solid var(--gbd);color:var(--green);font-size:12px;font-weight:600;padding:5px 13px;border-radius:20px}
+.dot{width:7px;height:7px;background:#16a34a;border-radius:50%;animation:blink 2s infinite}
+@keyframes blink{0%,100%{opacity:1}50%{opacity:.35}}
 
-  body {
-    background: var(--bg);
-    color: var(--text);
-    font-family: 'IBM Plex Sans', sans-serif;
-    min-height: 100vh;
-    display: flex;
-    flex-direction: column;
-  }
+/* Layout */
+main{flex:1;max-width:1120px;margin:0 auto;padding:32px 24px 64px;width:100%}
+.ph{display:flex;justify-content:space-between;align-items:flex-end;margin-bottom:28px;gap:16px;flex-wrap:wrap}
+.ph-title{font-size:24px;font-weight:700;letter-spacing:-.02em}
+.ph-sub{font-size:13px;color:var(--text2);margin-top:4px}
+.kpi{background:#fff;border:1px solid var(--border);border-radius:8px;padding:12px 20px;text-align:right;box-shadow:0 1px 3px rgba(0,0,0,.05);min-width:150px}
+.kpi-label{font-size:10px;text-transform:uppercase;letter-spacing:.08em;color:var(--text3);font-weight:600;margin-bottom:2px}
+.kpi-val{font-size:22px;font-weight:700;color:var(--navy);font-family:'DM Mono',monospace;line-height:1;transition:transform .25s}
+.kpi-val.bump{transform:scale(1.2)}
+.grid{display:grid;grid-template-columns:350px 1fr;gap:20px}
+@media(max-width:780px){.grid{grid-template-columns:1fr}}
 
-  body::before {
-    content: '';
-    position: fixed;
-    inset: 0;
-    background-image:
-      linear-gradient(var(--border) 1px, transparent 1px),
-      linear-gradient(90deg, var(--border) 1px, transparent 1px);
-    background-size: 40px 40px;
-    opacity: 0.3;
-    pointer-events: none;
-    z-index: 0;
-  }
+/* Panel */
+.panel{background:#fff;border:1px solid var(--border);border-radius:10px;overflow:hidden;box-shadow:0 1px 4px rgba(0,0,0,.06);display:flex;flex-direction:column}
+.ph2{padding:13px 20px;border-bottom:1px solid var(--border);background:#fafbfc;display:flex;align-items:center;justify-content:space-between}
+.ph2-t{font-size:13px;font-weight:600}
+.pb{padding:20px}
 
-  .container {
-    position: relative;
-    z-index: 1;
-    max-width: 680px;
-    margin: 0 auto;
-    padding: 48px 24px 64px;
-    width: 100%;
-  }
+/* Form */
+.field{margin-bottom:18px}
+.label{display:block;font-size:11px;font-weight:600;text-transform:uppercase;letter-spacing:.07em;color:var(--text2);margin-bottom:6px}
+.label em{color:#dc2626;font-style:normal}
+input[type=text]{width:100%;border:1px solid var(--border);border-radius:6px;padding:9px 12px;font-family:'DM Sans',sans-serif;font-size:14px;color:var(--text);background:#fff;outline:none;transition:border-color .15s,box-shadow .15s}
+input[type=text]:focus{border-color:var(--navy);box-shadow:0 0 0 3px rgba(0,32,74,.1)}
+input::placeholder{color:var(--text3)}
 
-  /* ── Header ── */
-  .header { margin-bottom: 40px; }
+/* Dropzone */
+.dz{border:2px dashed var(--border2);border-radius:8px;padding:30px 16px;text-align:center;cursor:pointer;transition:all .2s;position:relative;background:#fafbfc}
+.dz:hover,.dz.over{border-color:var(--navy);background:rgba(0,32,74,.03)}
+.dz input{position:absolute;inset:0;opacity:0;cursor:pointer;width:100%;height:100%}
+.dz-icon{width:40px;height:40px;margin:0 auto 10px;background:#e8edf5;border-radius:8px;display:flex;align-items:center;justify-content:center}
+.dz-main{font-size:13.5px;font-weight:600;color:var(--navy);margin-bottom:4px}
+.dz-sub{font-size:12px;color:var(--text3)}
 
-  .badge {
-    display: inline-flex;
-    align-items: center;
-    gap: 6px;
-    background: rgba(245,166,35,.12);
-    border: 1px solid rgba(245,166,35,.3);
-    color: var(--accent);
-    font-family: 'IBM Plex Mono', monospace;
-    font-size: 11px;
-    font-weight: 600;
-    letter-spacing: .1em;
-    text-transform: uppercase;
-    padding: 6px 12px;
-    border-radius: 4px;
-    margin-bottom: 20px;
-  }
+/* Preview */
+.prev{display:none;margin-top:12px;border-radius:8px;overflow:hidden;border:1px solid var(--border);position:relative}
+.prev img{width:100%;max-height:220px;object-fit:contain;background:#f8f8f8;display:block}
+.prev-rm{position:absolute;top:8px;right:8px;background:rgba(255,255,255,.9);border:1px solid var(--border);color:var(--text2);border-radius:5px;padding:3px 9px;font-size:11px;cursor:pointer;font-family:'DM Sans',sans-serif;font-weight:600}
+.prev-rm:hover{color:#dc2626;border-color:var(--rbd)}
 
-  .badge::before {
-    content: '';
-    width: 6px; height: 6px;
-    background: var(--accent);
-    border-radius: 50%;
-    animation: pulse 2s infinite;
-  }
+/* Button */
+.btn{width:100%;padding:11px 16px;border:none;border-radius:7px;font-family:'DM Sans',sans-serif;font-size:14px;font-weight:600;cursor:pointer;transition:all .15s;display:flex;align-items:center;justify-content:center;gap:8px}
+.btn-navy{background:var(--navy);color:#fff}
+.btn-navy:hover:not(:disabled){background:var(--navy2)}
+.btn-navy:disabled{opacity:.5;cursor:not-allowed}
 
-  @keyframes pulse { 0%,100%{opacity:1} 50%{opacity:.3} }
+/* Progress */
+.prog{height:2px;background:#e2e8f0;border-radius:1px;overflow:hidden;margin:12px 0;display:none}
+.prog-fill{height:100%;background:var(--navy);border-radius:1px;animation:prgm 2s ease-in-out infinite}
+@keyframes prgm{0%{width:5%}50%{width:80%}100%{width:95%}}
 
-  h1 {
-    font-size: 32px;
-    font-weight: 700;
-    line-height: 1.2;
-    margin-bottom: 10px;
-    letter-spacing: -.02em;
-  }
-  h1 span { color: var(--accent); }
+/* States */
+.empty,.loading{display:flex;flex-direction:column;align-items:center;justify-content:center;min-height:380px;color:var(--text3);text-align:center;padding:40px;flex:1}
+.ei{width:56px;height:56px;border-radius:12px;background:#f1f5f9;display:flex;align-items:center;justify-content:center;margin-bottom:16px}
+.et{font-size:14px;font-weight:500;color:var(--text2);margin-bottom:6px}
+.eh{font-size:12px}
+.spin{width:36px;height:36px;border:3px solid #e2e8f0;border-top-color:var(--navy);border-radius:50%;animation:spin .8s linear infinite;margin-bottom:16px}
+@keyframes spin{to{transform:rotate(360deg)}}
+.lt{font-size:14px;font-weight:600;color:var(--text2)}
+.ls{font-size:12px;color:var(--text3);margin-top:4px}
 
-  .subtitle { color: var(--text2); font-size: 14px; line-height: 1.6; }
+/* Result */
+.rp{display:none;flex-direction:column;flex:1;min-height:0}
 
-  /* ── Stats bar ── */
-  .stats-bar {
-    display: flex;
-    gap: 1px;
-    background: var(--border);
-    border: 1px solid var(--border);
-    border-radius: 8px;
-    overflow: hidden;
-    margin-bottom: 32px;
-  }
-  .stat { flex: 1; background: var(--surface); padding: 16px 20px; text-align: center; }
-  .stat-value {
-    font-family: 'IBM Plex Mono', monospace;
-    font-size: 28px; font-weight: 600;
-    color: var(--accent);
-    line-height: 1; margin-bottom: 4px;
-    transition: transform .3s ease;
-  }
-  .stat-value.bump { transform: scale(1.25); }
-  .stat-label { font-size: 11px; color: var(--text2); text-transform: uppercase; letter-spacing: .08em; }
+.alert{padding:12px 16px;border-left:4px solid;display:flex;align-items:flex-start;gap:10px;margin:14px 20px 0;border-radius:0 6px 6px 0}
+.alert-ok{background:var(--gbg);border-color:#16a34a}
+.alert-err{background:var(--rbg);border-color:#dc2626}
+.at{font-size:13px;font-weight:600}
+.alert-ok .at{color:var(--green)}
+.alert-err .at{color:var(--red)}
+.as{font-size:12px;color:var(--text2);margin-top:2px}
 
-  /* ── Card ── */
-  .card {
-    background: var(--surface);
-    border: 1px solid var(--border);
-    border-radius: 12px;
-    padding: 32px;
-    margin-bottom: 16px;
-  }
-  .card-title {
-    font-size: 12px; font-weight: 600; text-transform: uppercase;
-    letter-spacing: .1em; color: var(--text2); margin-bottom: 20px;
-    display: flex; align-items: center; gap: 8px;
-  }
-  .card-title::after { content:''; flex:1; height:1px; background:var(--border); }
+.ref{display:flex;align-items:center;gap:5px;font-size:11px;color:var(--text3);font-family:'DM Mono',monospace}
 
-  /* ── Input ── */
-  .input-group { margin-bottom: 20px; }
+table.dt{width:100%;border-collapse:collapse;font-size:13px}
+.dt tr:hover td{background:#f8fafc}
+.dt td{padding:11px 16px;border-bottom:1px solid #f1f5f9;vertical-align:middle}
+.dt td:first-child{width:42%;color:var(--text2);font-weight:500;background:#fafbfc;display:flex;align-items:center;gap:8px}
+.mono{background:#f1f5f9;border-radius:4px;padding:2px 8px;font-family:'DM Mono',monospace;font-size:12px;color:var(--navy);display:inline-block}
+.obs{background:var(--amber-bg);border:1px solid #fcd34d;color:#92400e;border-radius:4px;padding:2px 8px;font-size:12px;font-weight:600;display:inline-block}
 
-  label {
-    display: block; font-size: 12px; font-weight: 600;
-    color: var(--text2); text-transform: uppercase; letter-spacing: .08em; margin-bottom: 8px;
-  }
+.rf{padding:14px 20px;border-top:1px solid var(--border);background:#fafbfc;display:flex;justify-content:flex-end;gap:10px;margin-top:auto}
+.btn-g{padding:7px 16px;border:1px solid var(--border);border-radius:6px;background:transparent;font-family:'DM Sans',sans-serif;font-size:13px;font-weight:500;color:var(--text2);cursor:pointer;transition:all .15s}
+.btn-g:hover{background:var(--bg)}
+.btn-c{padding:7px 18px;border:none;border-radius:6px;background:#16a34a;color:#fff;font-family:'DM Sans',sans-serif;font-size:13px;font-weight:600;cursor:pointer;transition:background .15s;display:flex;align-items:center;gap:6px}
+.btn-c:hover{background:#15803d}
 
-  input[type="text"] {
-    width: 100%;
-    background: var(--surface2);
-    border: 1px solid var(--border);
-    border-radius: 8px;
-    padding: 12px 16px;
-    color: var(--text);
-    font-family: 'IBM Plex Sans', sans-serif;
-    font-size: 14px;
-    outline: none;
-    transition: border-color .2s;
-  }
-  input[type="text"]:focus { border-color: var(--accent); }
-  input[type="text"]::placeholder { color: var(--text2); opacity: .5; }
-
-  /* ── Drop zone ── */
-  .dropzone {
-    border: 2px dashed var(--border);
-    border-radius: 10px;
-    padding: 48px 24px;
-    text-align: center;
-    cursor: pointer;
-    transition: all .25s;
-    position: relative;
-    background: var(--surface2);
-  }
-  .dropzone:hover, .dropzone.drag-over {
-    border-color: var(--accent);
-    background: rgba(245,166,35,.05);
-  }
-  .dropzone input[type="file"] {
-    position: absolute; inset: 0; opacity: 0;
-    cursor: pointer; width: 100%; height: 100%;
-  }
-  .drop-icon { font-size: 40px; margin-bottom: 12px; display: block; }
-  .drop-text { font-size: 15px; font-weight: 600; color: var(--text); margin-bottom: 6px; }
-  .drop-hint { font-size: 12px; color: var(--text2); }
-
-  /* ── Preview ── */
-  .preview-wrap {
-    display: none; margin-top: 16px; border-radius: 8px; overflow: hidden;
-    border: 1px solid var(--border); position: relative;
-  }
-  .preview-wrap img {
-    width: 100%; max-height: 280px; object-fit: contain; background: #000; display: block;
-  }
-  .preview-remove {
-    position: absolute; top: 10px; right: 10px;
-    background: rgba(0,0,0,.7); border: 1px solid var(--border);
-    color: var(--text); border-radius: 6px; padding: 4px 10px;
-    font-size: 12px; cursor: pointer; font-family: 'IBM Plex Sans', sans-serif;
-  }
-
-  /* ── Button ── */
-  .btn {
-    width: 100%; padding: 16px; border: none; border-radius: 8px;
-    font-family: 'IBM Plex Sans', sans-serif; font-size: 15px; font-weight: 700;
-    cursor: pointer; transition: all .2s; letter-spacing: .03em;
-    display: flex; align-items: center; justify-content: center; gap: 8px;
-  }
-  .btn-primary { background: var(--accent); color: #000; }
-  .btn-primary:hover:not(:disabled) { background: #ffc04d; transform: translateY(-1px); }
-  .btn-primary:disabled { opacity: .5; cursor: not-allowed; transform: none; }
-
-  /* ── Progress ── */
-  .progress-bar {
-    height: 3px; background: var(--border); border-radius: 2px;
-    overflow: hidden; margin: 16px 0; display: none;
-  }
-  .progress-fill {
-    height: 100%; background: var(--accent); border-radius: 2px;
-    animation: progress-anim 2.5s ease-in-out infinite;
-  }
-  @keyframes progress-anim { 0%{width:5%} 50%{width:85%} 100%{width:95%} }
-
-  /* ── Result ── */
-  .result {
-    display: none; border-radius: 10px; padding: 20px; margin-top: 20px; border: 1px solid;
-  }
-  .result.success { background: rgba(16,185,129,.08); border-color: rgba(16,185,129,.3); }
-  .result.error   { background: rgba(239,68,68,.08);  border-color: rgba(239,68,68,.3); }
-  .result-title   { font-weight: 700; font-size: 14px; margin-bottom: 12px; display: flex; align-items: center; gap: 8px; }
-  .result.success .result-title { color: var(--success); }
-  .result.error   .result-title { color: var(--error); }
-  .result-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 6px; }
-  .result-item { background: rgba(0,0,0,.2); border-radius: 6px; padding: 8px 10px; }
-  .result-item-label {
-    font-size: 10px; color: var(--text2); text-transform: uppercase;
-    letter-spacing: .06em; margin-bottom: 2px; font-family: 'IBM Plex Mono', monospace;
-  }
-  .result-item-value { font-size: 13px; color: var(--text); font-weight: 500; }
-  .record-badge {
-    display: inline-flex; align-items: center; gap: 6px;
-    background: rgba(16,185,129,.15); border: 1px solid rgba(16,185,129,.3);
-    color: var(--success); font-family: 'IBM Plex Mono', monospace;
-    font-size: 12px; padding: 4px 10px; border-radius: 4px; margin-bottom: 14px;
-  }
-
-  /* ── Footer ── */
-  .footer {
-    text-align: center; padding: 32px 24px; color: var(--text2);
-    font-size: 12px; font-family: 'IBM Plex Mono', monospace;
-    position: relative; z-index: 1; margin-top: auto;
-  }
-  .footer a { color: var(--text2); text-decoration: none; opacity: .6; }
-  .footer a:hover { opacity: 1; }
+footer{text-align:center;padding:20px 24px;font-size:12px;color:var(--text3);border-top:1px solid var(--border)}
+footer a{color:var(--text3);text-decoration:none}
+footer a:hover{color:var(--navy)}
 </style>
 </head>
 <body>
-<div class="container">
 
-  <div class="header">
-    <div class="badge">Sistema activo</div>
-    <h1>Reporte de <span>Operación</span><br>de Equipos</h1>
-    <p class="subtitle">Sube la foto del reporte físico. La IA extrae los datos<br>y los registra automáticamente en el Excel centralizado.</p>
+<header class="nav">
+  <div class="nav-l">
+    <span class="brand">Santa Priscila</span>
+    <div class="divider"></div>
+    <span class="module">Módulo de Operaciones Agrícolas</span>
+  </div>
+  <div class="status"><span class="dot"></span>Sistema en línea</div>
+</header>
+
+<main>
+  <div class="ph">
+    <div>
+      <h2 class="ph-title">Registro de Maquinaria</h2>
+      <p class="ph-sub">Procesamiento automatizado de reportes físicos mediante OCR.</p>
+    </div>
+    <div class="kpi">
+      <div class="kpi-label">Lotes Procesados</div>
+      <div class="kpi-val" id="kpi">—</div>
+    </div>
   </div>
 
-  <div class="stats-bar">
-    <div class="stat">
-      <div class="stat-value" id="stat-registros">—</div>
-      <div class="stat-label">Registros</div>
+  <div class="grid">
+
+    <!-- FORM -->
+    <div class="panel">
+      <div class="ph2"><span class="ph2-t">Datos del Reporte</span></div>
+      <div class="pb">
+        <div class="field">
+          <label class="label">Proveedor / Contratista <em>*</em></label>
+          <input type="text" id="proveedor" placeholder="Ej: Transportes García S.A." autocomplete="organization">
+        </div>
+        <div class="field">
+          <label class="label">Documento Físico (Imagen) <em>*</em></label>
+          <div class="dz" id="dz">
+            <input type="file" id="fi" accept="image/*,.jpg,.jpeg,.png,.webp">
+            <div class="dz-icon">
+              <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="#00204A" stroke-width="2"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="17 8 12 3 7 8"/><line x1="12" y1="3" x2="12" y2="15"/></svg>
+            </div>
+            <div class="dz-main">Seleccionar archivo</div>
+            <div class="dz-sub">o arrastrar y soltar · JPG, PNG, WEBP (Máx 16MB)</div>
+          </div>
+          <div class="prev" id="prev">
+            <img id="pimg" src="" alt="">
+            <button class="prev-rm" onclick="removeFile()">✕ Quitar</button>
+          </div>
+        </div>
+        <div class="prog" id="prog"><div class="prog-fill"></div></div>
+        <button class="btn btn-navy" id="sbtn" onclick="upload()" disabled>
+          <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="17 8 12 3 7 8"/><line x1="12" y1="3" x2="12" y2="15"/></svg>
+          <span id="btxt">Procesar Reporte</span>
+        </button>
+      </div>
     </div>
-    <div class="stat">
-      <div class="stat-value" id="stat-imagenes">—</div>
-      <div class="stat-label">Imágenes</div>
+
+    <!-- RESULTS -->
+    <div class="panel" id="rpanel">
+
+      <div class="empty" id="es">
+        <div class="ei">
+          <svg width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="#94a3b8" stroke-width="1.5"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/><line x1="16" y1="13" x2="8" y2="13"/><line x1="16" y1="17" x2="8" y2="17"/></svg>
+        </div>
+        <div class="et">Sube un reporte para visualizar la extracción de datos.</div>
+        <div class="eh">Los datos extraídos aparecerán aquí para su revisión.</div>
+      </div>
+
+      <div class="loading" id="ls" style="display:none">
+        <div class="spin"></div>
+        <div class="lt">Analizando documento con IA...</div>
+        <div class="ls">Extrayendo horómetros y datos de operación.</div>
+      </div>
+
+      <div class="rp" id="rp">
+        <div class="ph2">
+          <span class="ph2-t">Resultados de Extracción</span>
+          <span class="ref">
+            <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/></svg>
+            ID-REF: <span id="refid">#000000</span>
+          </span>
+        </div>
+        <div id="abanner"></div>
+        <div style="flex:1;overflow:auto">
+          <table class="dt"><tbody id="tbody"></tbody></table>
+        </div>
+        <div class="rf">
+          <button class="btn-g" onclick="reset()">Nuevo reporte</button>
+          <button class="btn-c" onclick="reset()">
+            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><polyline points="20 6 9 17 4 12"/></svg>
+            Confirmar y cerrar
+          </button>
+        </div>
+      </div>
+
     </div>
   </div>
+</main>
 
-  <!-- Upload card -->
-  <div class="card">
-    <div class="card-title">📤 Subir reporte</div>
-
-    <div class="input-group">
-      <label>Nombre del proveedor</label>
-      <input type="text" id="proveedor" placeholder="Ej: Transportes García S.A." autocomplete="organization">
-    </div>
-
-    <div class="dropzone" id="dropzone">
-      <input type="file" id="fileInput" accept="image/*,.jpg,.jpeg,.png,.webp">
-      <span class="drop-icon">📷</span>
-      <div class="drop-text">Arrastra la foto aquí o haz clic para seleccionar</div>
-      <div class="drop-hint">JPG, PNG, WEBP — máx. 16 MB</div>
-    </div>
-
-    <div class="preview-wrap" id="previewWrap">
-      <img id="preview" src="" alt="Vista previa">
-      <button class="preview-remove" onclick="removeFile()">✕ Quitar</button>
-    </div>
-
-    <div class="progress-bar" id="progressBar">
-      <div class="progress-fill"></div>
-    </div>
-
-    <div class="result" id="result"></div>
-
-    <br>
-    <button class="btn btn-primary" id="submitBtn" onclick="upload()" disabled>
-      <span id="btnText">⬆ Subir y procesar</span>
-    </button>
-  </div>
-
-</div>
-
-<div class="footer">
-  Sistema de Registro de Reportes · v2.0 &nbsp;|&nbsp;
-  <a href="/admin">Acceso administrador →</a>
-</div>
+<footer>Sistema de Registro · Santa Priscila S.A. &nbsp;|&nbsp; <a href="/admin">Acceso administrador →</a></footer>
 
 <script>
-  let selectedFile = null;
+let file = null;
 
-  // ── Real-time stats via SSE ──
-  function initSSE() {
-    const evtSource = new EventSource('/stats/stream');
-    evtSource.onmessage = (e) => {
-      try {
-        const d = JSON.parse(e.data);
-        animateStat('stat-registros', d.registros);
-        animateStat('stat-imagenes', d.imagenes);
-      } catch(_) {}
-    };
-    evtSource.onerror = () => {
-      // SSE dropped — fall back to polling every 10 s
-      evtSource.close();
-      setInterval(loadStatsFallback, 10000);
-      loadStatsFallback();
-    };
+// Stats SSE
+(function(){
+  const el = document.getElementById('kpi');
+  function set(v){ if(el.textContent===String(v))return; el.textContent=v; el.classList.add('bump'); setTimeout(()=>el.classList.remove('bump'),300); }
+  const es = new EventSource('/stats/stream');
+  es.onmessage = e => { try{set(JSON.parse(e.data).registros);}catch(_){} };
+  es.onerror = () => { es.close(); const p=()=>fetch('/stats').then(r=>r.json()).then(d=>set(d.registros)).catch(()=>{}); p(); setInterval(p,10000); };
+})();
+
+// Drag-drop
+const dz = document.getElementById('dz');
+dz.addEventListener('dragover', e=>{ e.preventDefault(); dz.classList.add('over'); });
+dz.addEventListener('dragleave', ()=>dz.classList.remove('over'));
+dz.addEventListener('drop', e=>{ e.preventDefault(); dz.classList.remove('over'); if(e.dataTransfer.files[0])setFile(e.dataTransfer.files[0]); });
+document.getElementById('fi').addEventListener('change', e=>{ if(e.target.files[0])setFile(e.target.files[0]); });
+
+function setFile(f){ file=f; const r=new FileReader(); r.onload=ev=>{ document.getElementById('pimg').src=ev.target.result; document.getElementById('prev').style.display='block'; }; r.readAsDataURL(f); document.getElementById('sbtn').disabled=false; }
+function removeFile(){ file=null; document.getElementById('pimg').src=''; document.getElementById('prev').style.display='none'; document.getElementById('fi').value=''; document.getElementById('sbtn').disabled=true; }
+
+function showLoading(){ document.getElementById('es').style.display='none'; document.getElementById('ls').style.display='flex'; document.getElementById('rp').style.display='none'; }
+function reset(){ document.getElementById('rp').style.display='none'; document.getElementById('ls').style.display='none'; document.getElementById('es').style.display='flex'; }
+
+const ICONS = {
+  map:`<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 10c0 7-9 13-9 13s-9-6-9-13a9 9 0 0 1 18 0z"/><circle cx="12" cy="10" r="3"/></svg>`,
+  gear:`<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 0 1-2.83 2.83l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-4 0v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 0 1-2.83-2.83l.06-.06A1.65 1.65 0 0 0 4.68 15a1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1 0-4h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 0 1 2.83-2.83l.06.06A1.65 1.65 0 0 0 9 4.68a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 4 0v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 0 1 2.83 2.83l-.06.06A1.65 1.65 0 0 0 19.4 9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 0 4h-.09a1.65 1.65 0 0 0-1.51 1z"/></svg>`,
+  clock:`<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/></svg>`,
+};
+
+function showResult(data){
+  document.getElementById('ls').style.display='none';
+  document.getElementById('es').style.display='none';
+  document.getElementById('rp').style.display='flex';
+  document.getElementById('refid').textContent='#'+String(data.record||0).padStart(6,'0');
+  document.getElementById('abanner').innerHTML=`
+    <div class="alert alert-ok">
+      <div style="margin-top:1px;flex-shrink:0"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#16a34a" stroke-width="2.5"><polyline points="20 6 9 17 4 12"/></svg></div>
+      <div><div class="at">Lectura completada con éxito</div><div class="as">Los datos han sido validados y guardados en la base de datos central.</div></div>
+    </div>`;
+  const fields=[
+    ['CAMPAMENTO','Campamento','map'],
+    ['TIPO DE MAQUINARIA','Maquinaria','gear'],
+    ['TOTAL HORAS','Total Horas Operativas','clock'],
+    ['HOROMETRO INICIAL','Horómetro Inicial (I)',null],
+    ['HOROMETRO FINAL','Horómetro Final (F)',null],
+    ['FECHA DIARIO','Fecha de Trabajo',null],
+    ['CATEGORÍA DE TRABAJO','Categoría de Trabajo',null],
+    ['CONSUMO DE DIESEL','Consumo Diesel',null],
+    ['OBSERVACIONES','Observaciones',null],
+  ];
+  const d=data.data||{};
+  const rows=fields.map(([k,l,ic])=>{
+    const v=d[k]; if(v==null)return '';
+    const icon=ic?`<span style="color:#94a3b8">${ICONS[ic]}</span>`:'';
+    let val=k==='TOTAL HORAS'?`<strong>${v} hrs</strong>`
+           :k==='HOROMETRO INICIAL'||k==='HOROMETRO FINAL'?`<span class="mono">${v}</span>`
+           :k==='OBSERVACIONES'?`<span class="obs">${v}</span>`
+           :v;
+    return `<tr><td>${icon}${l}</td><td>${val}</td></tr>`;
+  }).join('');
+  document.getElementById('tbody').innerHTML=rows||`<tr><td colspan="2" style="text-align:center;color:#94a3b8;padding:24px">Datos guardados en el Excel.</td></tr>`;
+}
+
+function showError(msg){
+  document.getElementById('ls').style.display='none';
+  document.getElementById('es').style.display='none';
+  document.getElementById('rp').style.display='flex';
+  document.getElementById('abanner').innerHTML=`
+    <div class="alert alert-err">
+      <div style="margin-top:1px;flex-shrink:0"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#dc2626" stroke-width="2.5"><circle cx="12" cy="12" r="10"/><line x1="15" y1="9" x2="9" y2="15"/><line x1="9" y1="9" x2="15" y2="15"/></svg></div>
+      <div><div class="at">Error al procesar</div><div class="as">${msg}</div></div>
+    </div>`;
+  document.getElementById('tbody').innerHTML='';
+}
+
+async function pollStatus(jid){
+  for(let i=0;i<60;i++){
+    await new Promise(r=>setTimeout(r,2000));
+    try{
+      const r=await fetch('/status/'+jid), d=await r.json();
+      if(d.status==='done'){ document.getElementById('prog').style.display='none'; document.getElementById('btxt').textContent='Procesar Reporte'; document.getElementById('sbtn').disabled=true; showResult(d); return; }
+      if(d.status==='error'){ document.getElementById('prog').style.display='none'; document.getElementById('btxt').textContent='Procesar Reporte'; document.getElementById('sbtn').disabled=false; showError(d.error||'Error desconocido.'); return; }
+    }catch(_){}
   }
+  document.getElementById('prog').style.display='none'; document.getElementById('btxt').textContent='Procesar Reporte'; document.getElementById('sbtn').disabled=false; showError('La IA tardó demasiado. Intente de nuevo.');
+}
 
-  function animateStat(id, value) {
-    const el = document.getElementById(id);
-    if (el.textContent === String(value)) return;
-    el.textContent = value;
-    el.classList.add('bump');
-    setTimeout(() => el.classList.remove('bump'), 350);
-  }
-
-  async function loadStatsFallback() {
-    try {
-      const r = await fetch('/stats');
-      const d = await r.json();
-      animateStat('stat-registros', d.registros);
-      animateStat('stat-imagenes', d.imagenes);
-    } catch(_) {}
-  }
-
-  initSSE();
-
-  // ── Drag & drop ──
-  const dz = document.getElementById('dropzone');
-  dz.addEventListener('dragover',  e => { e.preventDefault(); dz.classList.add('drag-over'); });
-  dz.addEventListener('dragleave', () => dz.classList.remove('drag-over'));
-  dz.addEventListener('drop', e => {
-    e.preventDefault();
-    dz.classList.remove('drag-over');
-    const file = e.dataTransfer.files[0];
-    if (file) setFile(file);
-  });
-  document.getElementById('fileInput').addEventListener('change', e => {
-    if (e.target.files[0]) setFile(e.target.files[0]);
-  });
-
-  function setFile(file) {
-    selectedFile = file;
-    const reader = new FileReader();
-    reader.onload = e => {
-      document.getElementById('preview').src = e.target.result;
-      document.getElementById('previewWrap').style.display = 'block';
-    };
-    reader.readAsDataURL(file);
-    document.getElementById('submitBtn').disabled = false;
-    document.getElementById('result').style.display = 'none';
-  }
-
-  function removeFile() {
-    selectedFile = null;
-    document.getElementById('preview').src = '';
-    document.getElementById('previewWrap').style.display = 'none';
-    document.getElementById('fileInput').value = '';
-    document.getElementById('submitBtn').disabled = true;
-  }
-
-  function showResult(data) {
-    const result = document.getElementById('result');
-    const keyFields = [
-      ['FECHA DE TRABAJO DIARIO', 'Fecha'],
-      ['PROVEEDOR',               'Proveedor'],
-      ['CAMPAMENTO',              'Campamento'],
-      ['TIPO DE MAQUINARIA',      'Maquinaria'],
-      ['TOTAL HORAS',             'Total Horas'],
-      ['HOROMETRO INICIAL',       'Horómetro I'],
-      ['HOROMETRO FINAL',         'Horómetro F'],
-      ['OBSERVACIONES',           'Observaciones'],
-    ];
-    const itemsHtml = keyFields
-      .filter(([k]) => data.data[k] != null)
-      .map(([k, label]) => `
-        <div class="result-item">
-          <div class="result-item-label">${label}</div>
-          <div class="result-item-value">${data.data[k]}</div>
-        </div>`).join('');
-
-    result.className = 'result success';
-    result.innerHTML = `
-      <div class="result-title">✅ Reporte registrado correctamente</div>
-      <div class="record-badge">📋 Registro #${data.record}</div>
-      <div class="result-grid">${itemsHtml || '<p style="color:var(--text2);font-size:13px">Datos guardados en el Excel.</p>'}</div>
-    `;
-    result.style.display = 'block';
-  }
-
-  async function pollStatus(jobId) {
-    const result      = document.getElementById('result');
-    const progressBar = document.getElementById('progressBar');
-    const btn         = document.getElementById('submitBtn');
-    const btnText     = document.getElementById('btnText');
-
-    for (let i = 0; i < 60; i++) {           // max ~2 min
-      await new Promise(r => setTimeout(r, 2000));
-      try {
-        const r = await fetch(`/status/${jobId}`);
-        const d = await r.json();
-
-        if (d.status === 'done') {
-          progressBar.style.display = 'none';
-          btnText.textContent = '⬆ Subir y procesar';
-          showResult(d);
-          removeFile();
-          document.getElementById('proveedor').value = '';
-          return;
-        }
-        if (d.status === 'error') {
-          progressBar.style.display = 'none';
-          btnText.textContent = '⬆ Subir y procesar';
-          result.className = 'result error';
-          result.innerHTML = `<div class="result-title">❌ Error al procesar</div>
-            <p style="font-size:13px;color:var(--text2)">${d.error}</p>`;
-          result.style.display = 'block';
-          btn.disabled = false;
-          return;
-        }
-      } catch(_) { /* ignore transient network blips */ }
-    }
-
-    // Timeout
-    progressBar.style.display = 'none';
-    btnText.textContent = '⬆ Subir y procesar';
-    result.className = 'result error';
-    result.innerHTML = `<div class="result-title">⏱ Tiempo agotado</div>
-      <p style="font-size:13px;color:var(--text2)">La IA tardó demasiado. Por favor inténtalo de nuevo.</p>`;
-    result.style.display = 'block';
-    btn.disabled = false;
-  }
-
-  async function upload() {
-    if (!selectedFile) return;
-
-    const proveedor   = document.getElementById('proveedor').value.trim() || 'Sin nombre';
-    const btn         = document.getElementById('submitBtn');
-    const btnText     = document.getElementById('btnText');
-    const progressBar = document.getElementById('progressBar');
-    const result      = document.getElementById('result');
-
-    btn.disabled              = true;
-    btnText.textContent       = '⏳ Subiendo imagen...';
-    progressBar.style.display = 'block';
-    result.style.display      = 'none';
-
-    const formData = new FormData();
-    formData.append('file',      selectedFile);
-    formData.append('proveedor', proveedor);
-
-    try {
-      const response = await fetch('/upload', { method: 'POST', body: formData });
-      const data     = await response.json();
-
-      if (data.job_id) {
-        btnText.textContent = '⏳ IA procesando...';
-        pollStatus(data.job_id);
-      } else {
-        progressBar.style.display = 'none';
-        result.className = 'result error';
-        result.innerHTML = `<div class="result-title">❌ Error</div>
-          <p style="font-size:13px;color:var(--text2)">${data.error || 'Error desconocido'}</p>`;
-        result.style.display = 'block';
-        btn.disabled         = false;
-        btnText.textContent  = '⬆ Subir y procesar';
-      }
-    } catch(_) {
-      progressBar.style.display = 'none';
-      result.className = 'result error';
-      result.innerHTML = `<div class="result-title">❌ Error de conexión</div>
-        <p style="font-size:13px;color:var(--text2)">No se pudo conectar al servidor.</p>`;
-      result.style.display = 'block';
-      btn.disabled         = false;
-      btnText.textContent  = '⬆ Subir y procesar';
-    }
-  }
+async function upload(){
+  if(!file)return;
+  const prov=document.getElementById('proveedor').value.trim()||'Sin nombre';
+  document.getElementById('sbtn').disabled=true; document.getElementById('btxt').textContent='Procesando...';
+  document.getElementById('prog').style.display='block'; showLoading();
+  const fd=new FormData(); fd.append('file',file); fd.append('proveedor',prov);
+  try{
+    const r=await fetch('/upload',{method:'POST',body:fd}), d=await r.json();
+    if(d.job_id){ document.getElementById('btxt').textContent='IA procesando...'; pollStatus(d.job_id); }
+    else{ document.getElementById('prog').style.display='none'; document.getElementById('btxt').textContent='Procesar Reporte'; document.getElementById('sbtn').disabled=false; showError(d.error||'Error.'); }
+  }catch(_){ document.getElementById('prog').style.display='none'; document.getElementById('btxt').textContent='Procesar Reporte'; document.getElementById('sbtn').disabled=false; showError('No se pudo conectar al servidor.'); }
+}
 </script>
 </body>
 </html>
